@@ -1,6 +1,7 @@
 const STORAGE_KEY = "tracker-data-v1";
 const THEME_STORAGE_KEY = "tracker-theme-v1";
 const DEFAULT_THEME = "sunrise";
+const APP_VERSION = "v1.5.0";
 
 const state = {
   active: null,
@@ -11,8 +12,9 @@ let trackedDayKey = dayKey(Date.now());
 
 const activityButtons = Array.from(document.querySelectorAll(".activity-btn"));
 const stopBtn = document.getElementById("stopBtn");
-const activeStatus = document.getElementById("activeStatus");
 const sessionTimer = document.getElementById("sessionTimer");
+const activeBadge = document.getElementById("activeBadge");
+const activeBadgeText = document.getElementById("activeBadgeText");
 const entriesBody = document.getElementById("entriesBody");
 const todayLabel = document.getElementById("todayLabel");
 
@@ -20,8 +22,79 @@ const totalCaroda = document.getElementById("totalCaroda");
 const totalAYM = document.getElementById("totalAYM");
 const totalTests = document.getElementById("totalTests");
 const totalAll = document.getElementById("totalAll");
+const appVersion = document.getElementById("appVersion");
 const themeSelect = document.getElementById("themeSelect");
 const exportWeeklyBtn = document.getElementById("exportWeeklyBtn");
+const startConfirmOverlay = document.getElementById("startConfirmOverlay");
+const startConfirmMessage = document.getElementById("startConfirmMessage");
+const startConfirmOk = document.getElementById("startConfirmOk");
+const startConfirmCancel = document.getElementById("startConfirmCancel");
+
+let startConfirmResolver = null;
+
+function askStartConfirmation(message) {
+  if (!startConfirmOverlay || !startConfirmMessage || !startConfirmOk || !startConfirmCancel) {
+    return Promise.resolve(window.confirm(message));
+  }
+
+  if (startConfirmResolver) {
+    startConfirmResolver(false);
+    startConfirmResolver = null;
+  }
+
+  startConfirmMessage.textContent = message;
+  startConfirmOverlay.classList.remove("is-hidden");
+  startConfirmOverlay.setAttribute("aria-hidden", "false");
+
+  return new Promise((resolve) => {
+    startConfirmResolver = resolve;
+    startConfirmOk.focus();
+  });
+}
+
+function finishStartConfirmation(accepted) {
+  if (!startConfirmOverlay) {
+    return;
+  }
+
+  startConfirmOverlay.classList.add("is-hidden");
+  startConfirmOverlay.setAttribute("aria-hidden", "true");
+
+  if (!startConfirmResolver) {
+    return;
+  }
+
+  const resolve = startConfirmResolver;
+  startConfirmResolver = null;
+  resolve(accepted);
+}
+
+if (startConfirmOk) {
+  startConfirmOk.addEventListener("click", () => {
+    finishStartConfirmation(true);
+  });
+}
+
+if (startConfirmCancel) {
+  startConfirmCancel.addEventListener("click", () => {
+    finishStartConfirmation(false);
+  });
+}
+
+if (startConfirmOverlay) {
+  startConfirmOverlay.addEventListener("click", (event) => {
+    if (event.target === startConfirmOverlay) {
+      finishStartConfirmation(false);
+    }
+  });
+}
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && startConfirmResolver) {
+    finishStartConfirmation(false);
+  }
+});
+
 function applyTheme(themeName) {
   document.body.dataset.theme = themeName;
   if (themeSelect) {
@@ -420,10 +493,19 @@ function stopActive(nowTs = getNow()) {
   save();
 }
 
-function startActivity(activity) {
+async function startActivity(activity) {
   const nowTs = getNow();
 
   if (state.active && state.active.activity === activity) {
+    return;
+  }
+
+  const confirmMessage = state.active
+    ? `Právě běží ${state.active.activity}. Opravdu chceš přepnout na ${activity}?`
+    : `Opravdu chceš spustit aktivitu ${activity}?`;
+
+  const confirmed = await askStartConfirmation(confirmMessage);
+  if (!confirmed) {
     return;
   }
 
@@ -472,13 +554,21 @@ function renderButtons() {
 
 function renderActiveStatus() {
   if (!state.active) {
-    activeStatus.textContent = "Aktuálně: nic neběží";
+    if (activeBadge && activeBadgeText) {
+      activeBadgeText.textContent = "Nic neběží";
+      activeBadge.classList.remove("is-hidden", "is-running");
+      activeBadge.classList.add("is-idle");
+    }
     sessionTimer.textContent = "00:00:00";
     return;
   }
 
   const elapsed = getNow() - state.active.startTs;
-  activeStatus.textContent = `Aktuálně: ${state.active.activity}`;
+  if (activeBadge && activeBadgeText) {
+    activeBadgeText.textContent = `Běží: ${state.active.activity}`;
+    activeBadge.classList.remove("is-hidden", "is-idle");
+    activeBadge.classList.add("is-running");
+  }
   sessionTimer.textContent = formatTime(elapsed);
 }
 
@@ -495,14 +585,19 @@ let entriesExpanded = false;
 
 function renderEntries() {
   const today = dayKey(getNow());
-  const todayEntries = state.entries
-    .filter((entry) => entry.dayKey === today)
-    .reverse();
+  const todayEntries = [];
+
+  for (let i = state.entries.length - 1; i >= 0; i -= 1) {
+    const entry = state.entries[i];
+    if (entry.dayKey === today) {
+      todayEntries.push({ entry, originalIndex: i });
+    }
+  }
 
   const toggleBtn = document.getElementById('entriesToggleBtn');
 
   if (todayEntries.length === 0) {
-    entriesBody.innerHTML = '<tr><td colspan="4" class="empty">Zatím žádné záznamy.</td></tr>';
+    entriesBody.innerHTML = '<tr><td colspan="5" class="empty">Zatím žádné záznamy.</td></tr>';
     toggleBtn.style.display = 'none';
     return;
   }
@@ -510,12 +605,16 @@ function renderEntries() {
   const visible = entriesExpanded ? todayEntries : todayEntries.slice(0, ENTRIES_VISIBLE);
 
   entriesBody.innerHTML = visible
-    .map((entry) => {
+    .map(({ entry, originalIndex }) => {
       return `<tr>
         <td>${entry.activity}</td>
         <td>${formatClock(entry.startTs)}</td>
         <td>${formatClock(entry.endTs)}</td>
         <td>${formatTime(entry.durationMs)}</td>
+        <td class="entry-actions">
+          <button class="entry-action-btn edit" data-entry-index="${originalIndex}" type="button">Upravit</button>
+          <button class="entry-action-btn delete" data-entry-index="${originalIndex}" type="button">Smazat</button>
+        </td>
       </tr>`;
     })
     .join("");
@@ -533,6 +632,75 @@ function renderEntries() {
   } else {
     toggleBtn.style.display = 'none';
   }
+}
+
+function editEntry(index) {
+  const entry = state.entries[index];
+  if (!entry) {
+    return;
+  }
+
+  const currentMinutes = Math.max(1, Math.round(entry.durationMs / 60000));
+  const raw = window.prompt("Upravit trvání v minutách:", String(currentMinutes));
+  if (raw === null) {
+    return;
+  }
+
+  const parsed = Number(raw.replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    window.alert("Zadej prosím platné číslo minut větší než 0.");
+    return;
+  }
+
+  const durationMs = Math.round(parsed * 60000);
+  entry.durationMs = durationMs;
+  entry.endTs = entry.startTs + durationMs;
+  save();
+  render();
+}
+
+function deleteEntry(index) {
+  const entry = state.entries[index];
+  if (!entry) {
+    return;
+  }
+
+  const ok = window.confirm(`Smazat záznam ${entry.activity} (${formatClock(entry.startTs)} - ${formatClock(entry.endTs)})?`);
+  if (!ok) {
+    return;
+  }
+
+  state.entries.splice(index, 1);
+  save();
+  render();
+}
+
+if (entriesBody) {
+  entriesBody.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const btn = target.closest("button[data-entry-index]");
+    if (!(btn instanceof HTMLElement)) {
+      return;
+    }
+
+    const index = Number(btn.dataset.entryIndex);
+    if (!Number.isInteger(index)) {
+      return;
+    }
+
+    if (btn.classList.contains("edit")) {
+      editEntry(index);
+      return;
+    }
+
+    if (btn.classList.contains("delete")) {
+      deleteEntry(index);
+    }
+  });
 }
 
 function showNewDayBanner() {
@@ -589,9 +757,9 @@ function render() {
 }
 
 for (const btn of activityButtons) {
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
     const activity = btn.dataset.activity;
-    startActivity(activity);
+    await startActivity(activity);
   });
 }
 
@@ -633,6 +801,9 @@ function scheduleMidnightCheck() {
 loadTheme();
 load();
 trackedDayKey = dayKey(Date.now());
+if (appVersion) {
+  appVersion.textContent = APP_VERSION;
+}
 render();
 setInterval(render, 1000);
 scheduleMidnightCheck();

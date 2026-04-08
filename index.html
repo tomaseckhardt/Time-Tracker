@@ -39,7 +39,10 @@
         <button class="activity-btn" data-activity="Automatizované testy">Automatizované testy</button>
       </div>
       <button id="stopBtn" class="stop-btn">Zastavit</button>
-      <p id="activeStatus" class="active-status">Aktualne: nic nebezi</p>
+      <div id="activeBadge" class="active-badge is-hidden" aria-live="polite">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <span id="activeBadgeText">Bezi aktivita</span>
+      </div>
       <p id="sessionTimer" class="session-timer">00:00:00</p>
     </section>
 
@@ -73,6 +76,7 @@
               <th>Od</th>
               <th>Do</th>
               <th>Trvání</th>
+              <th>Akce</th>
             </tr>
           </thead>
           <tbody id="entriesBody"></tbody>
@@ -82,6 +86,18 @@
     </section>
 
   </main>
+  <footer class="app-footer">Time Tracker <span id="appVersion">v1.0.0</span></footer>
+
+  <div id="startConfirmOverlay" class="confirm-overlay is-hidden" aria-hidden="true">
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="startConfirmTitle">
+      <h3 id="startConfirmTitle">Potvrzení spuštění</h3>
+      <p id="startConfirmMessage"></p>
+      <div class="confirm-actions">
+        <button id="startConfirmCancel" class="confirm-btn cancel" type="button">Zrušit</button>
+        <button id="startConfirmOk" class="confirm-btn ok" type="button">Spustit</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

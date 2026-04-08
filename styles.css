@@ -328,10 +328,30 @@ button:active {
   width: 100%;
 }
 
+.activity-btn[data-activity="AYM"] {
+  background: rgba(247, 154, 47, 0.14);
+  color: #2f3137;
+  border: 1px solid rgba(247, 154, 47, 0.28);
+}
+
+.activity-btn[data-activity="Caroda"] {
+  background: rgba(96, 89, 208, 0.13);
+  color: #2f2d63;
+  border: 1px solid rgba(96, 89, 208, 0.26);
+}
+
 .activity-btn.active {
   background: linear-gradient(130deg, var(--secondary), var(--primary));
   color: #ffffff;
   box-shadow: 0 8px 18px color-mix(in srgb, var(--secondary) 48%, transparent);
+}
+
+.activity-btn[data-activity="AYM"].active {
+  background: linear-gradient(130deg, #3a3c43, #f79a2f);
+}
+
+.activity-btn[data-activity="Caroda"].active {
+  background: linear-gradient(130deg, #37316b, #5d8dff);
 }
 
 .stop-btn {
@@ -354,6 +374,39 @@ button:active {
   margin: 12px 0 4px;
   color: var(--muted);
   font-weight: 500;
+}
+
+.active-badge {
+  margin: 0 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px 11px;
+  background: color-mix(in srgb, var(--secondary) 12%, #ffffff);
+  color: color-mix(in srgb, var(--secondary) 80%, #1f2937);
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.active-badge.is-idle {
+  background: rgba(185, 58, 58, 0.1);
+  color: #8f2020;
+}
+
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 rgba(34, 197, 94, 0.5);
+  animation: pulseDot 1.3s infinite;
+}
+
+.active-badge.is-idle .pulse-dot {
+  background: #ef4444;
+  box-shadow: none;
+  animation: none;
 }
 
 .session-timer {
@@ -461,6 +514,114 @@ tbody tr:hover {
   background: var(--table-hover);
 }
 
+.entry-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.entry-action-btn {
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 0.79rem;
+  min-height: 30px;
+  width: auto;
+  transform: none;
+}
+
+.entry-action-btn:hover {
+  transform: none;
+}
+
+.entry-action-btn.edit {
+  background: rgba(37, 99, 235, 0.13);
+  color: #1e40af;
+}
+
+.entry-action-btn.delete {
+  background: rgba(185, 58, 58, 0.14);
+  color: #9f1d1d;
+}
+
+.app-footer {
+  width: min(960px, 93vw);
+  margin: 0 auto 26px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  text-align: right;
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 22, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 20;
+  padding: 16px;
+}
+
+.confirm-overlay.is-hidden {
+  display: none;
+}
+
+.confirm-modal {
+  width: min(440px, 100%);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(20, 30, 44, 0.24);
+  padding: 16px;
+}
+
+.confirm-modal h3 {
+  margin: 0 0 8px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.1rem;
+}
+
+.confirm-modal p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.confirm-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.confirm-btn {
+  min-height: 38px;
+  border-radius: 10px;
+  width: auto;
+}
+
+.confirm-btn.cancel {
+  background: #eef1f5;
+  color: #223045;
+}
+
+.confirm-btn.ok {
+  background: linear-gradient(120deg, var(--secondary), var(--primary));
+  color: #ffffff;
+}
+
+@keyframes pulseDot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  }
+
+  70% {
+    box-shadow: 0 0 0 9px rgba(34, 197, 94, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
 @keyframes revealUp {
   from {
     opacity: 0;
@@ -515,6 +676,24 @@ tbody tr:hover {
   }
 
   .stop-btn {
+    width: 100%;
+  }
+
+  .entry-actions {
+    justify-content: flex-start;
+  }
+
+  .app-footer {
+    width: min(960px, 93vw);
+    text-align: left;
+    margin-bottom: 18px;
+  }
+
+  .confirm-actions {
+    flex-direction: column;
+  }
+
+  .confirm-btn {
     width: 100%;
   }
 }
