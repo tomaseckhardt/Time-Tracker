@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Tracker - Caroda / AYM / Testy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
+  <div class="bg-orb bg-orb-b" aria-hidden="true"></div>
+  <main class="app">
+    <header class="app-header">
+      <div class="header-top">
+        <h1>Time Tracker</h1>
+        <label class="theme-switch" for="themeSelect">
+          Vzhled
+          <select id="themeSelect" aria-label="Vyber vzhled aplikace">
+            <option value="sunrise">Sunrise Glass</option>
+            <option value="slate">Slate Focus</option>
+            <option value="citrus">Citrus Pop</option>
+          </select>
+        </label>
+      </div>
+      <p id="todayLabel" class="today-label"></p>
+      <p class="theme-note">Zkus přepnout variantu UI a vyber si, která ti sedí nejvíc.</p>
+    </header>
+
+    <section class="panel">
+      <h2>Aktivita</h2>
+      <div class="buttons">
+        <button class="activity-btn" data-activity="Caroda">Caroda</button>
+        <button class="activity-btn" data-activity="AYM">AYM</button>
+        <button class="activity-btn" data-activity="Automatizované testy">Automatizované testy</button>
+      </div>
+      <button id="stopBtn" class="stop-btn">Zastavit</button>
+      <p id="activeStatus" class="active-status">Aktualne: nic nebezi</p>
+      <p id="sessionTimer" class="session-timer">00:00:00</p>
+    </section>
+
+    <section class="panel">
+      <h2>Dnešní souhrn</h2>
+      <div class="summary-grid">
+        <div class="card">
+          <p>Caroda</p>
+          <strong id="totalCaroda">00:00:00</strong>
+        </div>
+        <div class="card">
+          <p>AYM</p>
+          <strong id="totalAYM">00:00:00</strong>
+        </div>
+        <div class="card">
+          <p>Automatizované testy</p>
+          <strong id="totalTests">00:00:00</strong>
+        </div>
+      </div>
+      <p class="overall">Celkově dnes: <strong id="totalAll">00:00:00</strong></p>
+      <button id="exportWeeklyBtn" class="export-btn">Otevřít týdenní report</button>
+    </section>
+
+    <section class="panel">
+      <h2>Poslední záznamy</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Aktivita</th>
+              <th>Od</th>
+              <th>Do</th>
+              <th>Trvání</th>
+            </tr>
+          </thead>
+          <tbody id="entriesBody"></tbody>
+        </table>
+      </div>
+      <button id="entriesToggleBtn" class="entries-toggle-btn" style="display:none"></button>
+    </section>
+
+    <section id="cloudPanel" class="panel panel-accordion">
+      <button id="cloudPanelToggle" class="accordion-header" aria-expanded="false">
+        <span class="accordion-title">Cloud Sync (více zařízení)</span>
+        <span id="cloudStatusInline" class="accordion-status">Není nastaven</span>
+        <span class="accordion-arrow" aria-hidden="true">&#9660;</span>
+      </button>
+      <div id="cloudPanelBody" class="accordion-body">
+        <div class="accordion-inner">
+          <p class="sync-note">Nastav Supabase a pak použij Upload/Download pro synchronizaci mezi zařízeními.</p>
+          <div class="sync-grid">
+            <label>
+              Supabase URL
+              <input id="supabaseUrlInput" type="text" placeholder="https://xxxx.supabase.co" autocomplete="off" />
+            </label>
+            <label>
+              Supabase Anon Key
+              <input id="supabaseKeyInput" type="password" placeholder="eyJ..." autocomplete="off" />
+            </label>
+            <label>
+              User ID
+              <input id="supabaseUserInput" type="text" placeholder="např. martin" autocomplete="off" />
+            </label>
+          </div>
+          <div class="sync-actions">
+            <button id="saveCloudConfigBtn" class="sync-btn">Uložit nastavení</button>
+            <button id="cloudUploadBtn" class="sync-btn">Upload do cloudu</button>
+            <button id="cloudDownloadBtn" class="sync-btn">Download z cloudu</button>
+          </div>
+          <label class="autosync-toggle" for="autoSyncCheckbox">
+            <input id="autoSyncCheckbox" type="checkbox" />
+            Automaticky nahrávat po každé změně aktivity
+          </label>
+          <p id="cloudStatus" class="cloud-status"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
