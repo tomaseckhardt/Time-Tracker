@@ -79,42 +79,6 @@
       <button id="entriesToggleBtn" class="entries-toggle-btn" style="display:none"></button>
     </section>
 
-    <section id="cloudPanel" class="panel panel-accordion">
-      <button id="cloudPanelToggle" class="accordion-header" aria-expanded="false">
-        <span class="accordion-title">Cloud Sync (více zařízení)</span>
-        <span id="cloudStatusInline" class="accordion-status">Není nastaven</span>
-        <span class="accordion-arrow" aria-hidden="true">&#9660;</span>
-      </button>
-      <div id="cloudPanelBody" class="accordion-body">
-        <div class="accordion-inner">
-          <p class="sync-note">Nastav Supabase a pak použij Upload/Download pro synchronizaci mezi zařízeními.</p>
-          <div class="sync-grid">
-            <label>
-              Supabase URL
-              <input id="supabaseUrlInput" type="text" placeholder="https://xxxx.supabase.co" autocomplete="off" />
-            </label>
-            <label>
-              Supabase Anon Key
-              <input id="supabaseKeyInput" type="password" placeholder="eyJ..." autocomplete="off" />
-            </label>
-            <label>
-              User ID
-              <input id="supabaseUserInput" type="text" placeholder="např. martin" autocomplete="off" />
-            </label>
-          </div>
-          <div class="sync-actions">
-            <button id="saveCloudConfigBtn" class="sync-btn">Uložit nastavení</button>
-            <button id="cloudUploadBtn" class="sync-btn">Upload do cloudu</button>
-            <button id="cloudDownloadBtn" class="sync-btn">Download z cloudu</button>
-          </div>
-          <label class="autosync-toggle" for="autoSyncCheckbox">
-            <input id="autoSyncCheckbox" type="checkbox" />
-            Automaticky nahrávat po každé změně aktivity
-          </label>
-          <p id="cloudStatus" class="cloud-status"></p>
-        </div>
-      </div>
-    </section>
   </main>
 
   <script src="app.js"></script>

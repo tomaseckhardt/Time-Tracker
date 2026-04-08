@@ -1,8 +1,5 @@
 const STORAGE_KEY = "tracker-data-v1";
 const THEME_STORAGE_KEY = "tracker-theme-v1";
-const CLOUD_CONFIG_KEY = "tracker-cloud-config-v1";
-const AUTO_SYNC_KEY = "tracker-auto-sync-v1";
-const CLOUD_PANEL_COLLAPSED_KEY = "tracker-cloud-panel-collapsed-v1";
 const DEFAULT_THEME = "sunrise";
 
 const state = {
@@ -25,239 +22,6 @@ const totalTests = document.getElementById("totalTests");
 const totalAll = document.getElementById("totalAll");
 const themeSelect = document.getElementById("themeSelect");
 const exportWeeklyBtn = document.getElementById("exportWeeklyBtn");
-const supabaseUrlInput = document.getElementById("supabaseUrlInput");
-const supabaseKeyInput = document.getElementById("supabaseKeyInput");
-const supabaseUserInput = document.getElementById("supabaseUserInput");
-const saveCloudConfigBtn = document.getElementById("saveCloudConfigBtn");
-const cloudUploadBtn = document.getElementById("cloudUploadBtn");
-const cloudDownloadBtn = document.getElementById("cloudDownloadBtn");
-const cloudStatus = document.getElementById("cloudStatus");
-const cloudStatusInline = document.getElementById("cloudStatusInline");
-const autoSyncCheckbox = document.getElementById("autoSyncCheckbox");
-const cloudPanel = document.getElementById("cloudPanel");
-const cloudPanelToggle = document.getElementById("cloudPanelToggle");
-
-let cloudConfig = {
-  url: "",
-  anonKey: "",
-  userId: "",
-};
-let autoSyncEnabled = true;
-let autoSyncTimer = null;
-
-function setCloudPanelOpen(open, persist = true) {
-  if (cloudPanel) {
-    cloudPanel.classList.toggle("is-open", open);
-  }
-  if (cloudPanelToggle) {
-    cloudPanelToggle.setAttribute("aria-expanded", String(open));
-  }
-  if (persist) {
-    localStorage.setItem(CLOUD_PANEL_COLLAPSED_KEY, String(!open));
-  }
-}
-
-function normalizeSupabaseUrl(url) {
-  return url.trim().replace(/\/+$/, "");
-}
-
-function setCloudStatus(text, isError = false) {
-  if (cloudStatus) {
-    cloudStatus.textContent = text;
-    cloudStatus.classList.toggle("error", Boolean(isError));
-  }
-  if (cloudStatusInline) {
-    cloudStatusInline.textContent = text;
-    cloudStatusInline.classList.toggle("error", Boolean(isError));
-  }
-}
-
-function isCloudConfigReady(config) {
-  return Boolean(config.url && config.anonKey && config.userId);
-}
-
-function loadCloudConfig() {
-  const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
-  if (!raw) {
-    setCloudStatus("Cloud není nastaven.");
-    return;
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    cloudConfig = {
-      url: normalizeSupabaseUrl(parsed.url ?? ""),
-      anonKey: (parsed.anonKey ?? "").trim(),
-      userId: (parsed.userId ?? "").trim(),
-    };
-  } catch {
-    cloudConfig = { url: "", anonKey: "", userId: "" };
-  }
-
-  if (supabaseUrlInput) {
-    supabaseUrlInput.value = cloudConfig.url;
-  }
-  if (supabaseKeyInput) {
-    supabaseKeyInput.value = cloudConfig.anonKey;
-  }
-  if (supabaseUserInput) {
-    supabaseUserInput.value = cloudConfig.userId;
-  }
-
-  if (isCloudConfigReady(cloudConfig)) {
-    setCloudStatus(`Cloud: ${cloudConfig.userId}`);
-  } else {
-    setCloudStatus("Není nastaven");
-  }
-
-  const rawAutoSync = localStorage.getItem(AUTO_SYNC_KEY);
-  autoSyncEnabled = rawAutoSync === null ? true : rawAutoSync === "true";
-  if (autoSyncCheckbox) {
-    autoSyncCheckbox.checked = autoSyncEnabled;
-  }
-
-  const savedCollapsed = localStorage.getItem(CLOUD_PANEL_COLLAPSED_KEY) === "true";
-  const openByDefault = !savedCollapsed || !isCloudConfigReady(cloudConfig);
-  setCloudPanelOpen(openByDefault, false);
-}
-
-function saveCloudConfigFromInputs() {
-  cloudConfig = {
-    url: normalizeSupabaseUrl(supabaseUrlInput?.value ?? ""),
-    anonKey: (supabaseKeyInput?.value ?? "").trim(),
-    userId: (supabaseUserInput?.value ?? "").trim(),
-  };
-
-  localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cloudConfig));
-
-  if (!isCloudConfigReady(cloudConfig)) {
-    setCloudStatus("Nastavení uloženo, ale chybí URL, key nebo user ID.", true);
-    setCloudPanelOpen(true);
-    return;
-  }
-
-  setCloudStatus(`Cloud: ${cloudConfig.userId}`);
-  setCloudPanelOpen(false);
-}
-
-async function supabaseFetch(path, options = {}) {
-  const url = `${cloudConfig.url}${path}`;
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      apikey: cloudConfig.anonKey,
-      Authorization: `Bearer ${cloudConfig.anonKey}`,
-      ...(options.headers || {}),
-    },
-  });
-
-  return response;
-}
-
-async function uploadToCloud() {
-  if (!isCloudConfigReady(cloudConfig)) {
-    setCloudStatus("Nejdřív vyplň a ulož nastavení cloudu.", true);
-    return;
-  }
-
-  setCloudStatus("Nahrávám data do cloudu...");
-  const payload = {
-    active: state.active,
-    entries: state.entries,
-  };
-
-  try {
-    const response = await supabaseFetch("/rest/v1/tracker_snapshots?on_conflict=user_id", {
-      method: "POST",
-      headers: {
-        Prefer: "resolution=merge-duplicates,return=representation",
-      },
-      body: JSON.stringify([
-        {
-          user_id: cloudConfig.userId,
-          payload,
-          updated_at: new Date().toISOString(),
-        },
-      ]),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(errText || `HTTP ${response.status}`);
-    }
-
-    setCloudStatus("Upload hotový.");
-  } catch (error) {
-    setCloudStatus(`Upload selhal: ${error.message}`, true);
-  }
-}
-
-function scheduleAutoSyncUpload() {
-  if (!autoSyncEnabled || !isCloudConfigReady(cloudConfig)) {
-    return;
-  }
-
-  if (autoSyncTimer) {
-    clearTimeout(autoSyncTimer);
-  }
-
-  autoSyncTimer = setTimeout(async () => {
-    autoSyncTimer = null;
-    await uploadToCloud();
-  }, 1200);
-}
-
-function isValidSnapshotPayload(payload) {
-  return Boolean(
-    payload
-    && typeof payload === "object"
-    && Array.isArray(payload.entries)
-    && Object.prototype.hasOwnProperty.call(payload, "active")
-  );
-}
-
-async function downloadFromCloud() {
-  if (!isCloudConfigReady(cloudConfig)) {
-    setCloudStatus("Nejdřív vyplň a ulož nastavení cloudu.", true);
-    return;
-  }
-
-  setCloudStatus("Stahuji data z cloudu...");
-
-  try {
-    const filter = encodeURIComponent(`eq.${cloudConfig.userId}`);
-    const response = await supabaseFetch(
-      `/rest/v1/tracker_snapshots?user_id=${filter}&select=payload,updated_at&limit=1`
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(errText || `HTTP ${response.status}`);
-    }
-
-    const rows = await response.json();
-    if (!Array.isArray(rows) || rows.length === 0) {
-      setCloudStatus("V cloudu zatím nejsou data pro dané user ID.", true);
-      return;
-    }
-
-    const snapshot = rows[0]?.payload;
-    if (!isValidSnapshotPayload(snapshot)) {
-      setCloudStatus("Cloud data mají neplatný formát.", true);
-      return;
-    }
-
-    state.active = snapshot.active ?? null;
-    state.entries = snapshot.entries;
-    save(false);
-    render();
-    setCloudStatus("Download hotový. Data jsou načtena do aplikace.");
-  } catch (error) {
-    setCloudStatus(`Download selhal: ${error.message}`, true);
-  }
-}
-
 function applyTheme(themeName) {
   document.body.dataset.theme = themeName;
   if (themeSelect) {
@@ -612,11 +376,8 @@ function exportWeeklySummary() {
   openWeeklyReportPage(rows);
 }
 
-function save(triggerAutoSync = true) {
+function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  if (triggerAutoSync) {
-    scheduleAutoSyncUpload();
-  }
 }
 
 function load() {
@@ -849,44 +610,6 @@ if (exportWeeklyBtn) {
   });
 }
 
-if (saveCloudConfigBtn) {
-  saveCloudConfigBtn.addEventListener("click", () => {
-    saveCloudConfigFromInputs();
-  });
-}
-
-if (cloudUploadBtn) {
-  cloudUploadBtn.addEventListener("click", async () => {
-    await uploadToCloud();
-  });
-}
-
-if (cloudDownloadBtn) {
-  cloudDownloadBtn.addEventListener("click", async () => {
-    await downloadFromCloud();
-  });
-}
-
-if (autoSyncCheckbox) {
-  autoSyncCheckbox.addEventListener("change", () => {
-    autoSyncEnabled = autoSyncCheckbox.checked;
-    localStorage.setItem(AUTO_SYNC_KEY, String(autoSyncEnabled));
-    if (autoSyncEnabled) {
-      setCloudStatus("Auto sync je zapnuty.");
-      scheduleAutoSyncUpload();
-    } else {
-      setCloudStatus("Auto sync je vypnuty.");
-    }
-  });
-}
-
-if (cloudPanelToggle) {
-  cloudPanelToggle.addEventListener("click", () => {
-    const isOpen = cloudPanel.classList.contains("is-open");
-    setCloudPanelOpen(!isOpen);
-  });
-}
-
 function scheduleMidnightCheck() {
   const now = new Date();
   const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
@@ -904,7 +627,6 @@ function scheduleMidnightCheck() {
 }
 
 loadTheme();
-loadCloudConfig();
 load();
 trackedDayKey = dayKey(Date.now());
 render();

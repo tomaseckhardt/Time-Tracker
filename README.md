@@ -13,20 +13,6 @@ Jednoduchá webová aplikace pro sledování času stráveného na jednotlivých
 - **Denní cyklus** — aktivita se automaticky zastaví o půlnoci, zobrazí se notifikace o novém dni
 - **Persistence** — veškerá data se ukládají do `localStorage`
 
-## Cloud sync (volitelné)
-
-Pro synchronizaci mezi zařízeními potřebuješ vlastní [Supabase](https://supabase.com) projekt s tabulkou:
-
-```sql
-CREATE TABLE tracker_snapshots (
-  user_id TEXT PRIMARY KEY,
-  payload JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-```
-
-URL, Anon Key a User ID zadej v sekci **Cloud Sync** přímo v aplikaci.
-
 ## Struktura projektu
 
 ```
