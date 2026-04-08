@@ -67,6 +67,34 @@
     </section>
 
     <section class="panel">
+      <h2>Ruční přidání záznamu</h2>
+      <div class="manual-grid">
+        <label>
+          Aktivita
+          <select id="manualActivityInput">
+            <option value="Caroda">Caroda</option>
+            <option value="AYM">AYM</option>
+            <option value="Automatizované testy">Automatizované testy</option>
+          </select>
+        </label>
+        <label>
+          Datum
+          <input id="manualDateInput" type="date" />
+        </label>
+        <label>
+          Od
+          <input id="manualStartInput" type="time" step="60" />
+        </label>
+        <label>
+          Do
+          <input id="manualEndInput" type="time" step="60" />
+        </label>
+      </div>
+      <button id="manualAddBtn" class="manual-add-btn">Přidat záznam</button>
+      <p id="manualStatus" class="manual-status"></p>
+    </section>
+
+    <section class="panel">
       <h2>Poslední záznamy</h2>
       <div class="table-wrap">
         <table>

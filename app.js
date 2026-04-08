@@ -25,6 +25,12 @@ const totalAll = document.getElementById("totalAll");
 const appVersion = document.getElementById("appVersion");
 const themeSelect = document.getElementById("themeSelect");
 const exportWeeklyBtn = document.getElementById("exportWeeklyBtn");
+const manualActivityInput = document.getElementById("manualActivityInput");
+const manualDateInput = document.getElementById("manualDateInput");
+const manualStartInput = document.getElementById("manualStartInput");
+const manualEndInput = document.getElementById("manualEndInput");
+const manualAddBtn = document.getElementById("manualAddBtn");
+const manualStatus = document.getElementById("manualStatus");
 const startConfirmOverlay = document.getElementById("startConfirmOverlay");
 const startConfirmMessage = document.getElementById("startConfirmMessage");
 const startConfirmOk = document.getElementById("startConfirmOk");
@@ -143,6 +149,87 @@ function formatClock(ts) {
     minute: "2-digit",
     second: "2-digit",
   });
+}
+
+function formatDateInputValue(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function formatTimeInputValue(date) {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+function parseLocalDateTime(dateValue, timeValue) {
+  if (!dateValue || !timeValue) {
+    return null;
+  }
+
+  const [y, m, d] = dateValue.split("-").map(Number);
+  const [hh, mm] = timeValue.split(":").map(Number);
+  if (![y, m, d, hh, mm].every(Number.isFinite)) {
+    return null;
+  }
+
+  return new Date(y, m - 1, d, hh, mm, 0, 0).getTime();
+}
+
+function setManualStatus(message, isError = false) {
+  if (!manualStatus) {
+    return;
+  }
+
+  manualStatus.textContent = message;
+  manualStatus.classList.toggle("error", Boolean(isError));
+  manualStatus.classList.toggle("success", !isError && Boolean(message));
+}
+
+function setManualDefaults() {
+  if (!manualDateInput || !manualStartInput || !manualEndInput) {
+    return;
+  }
+
+  const now = new Date();
+  const start = new Date(now.getTime() - 60 * 60000);
+  manualDateInput.value = formatDateInputValue(now);
+  manualStartInput.value = formatTimeInputValue(start);
+  manualEndInput.value = formatTimeInputValue(now);
+}
+
+function addManualEntry() {
+  if (!manualActivityInput || !manualDateInput || !manualStartInput || !manualEndInput) {
+    return;
+  }
+
+  const startTs = parseLocalDateTime(manualDateInput.value, manualStartInput.value);
+  const endTs = parseLocalDateTime(manualDateInput.value, manualEndInput.value);
+
+  if (startTs === null || endTs === null) {
+    setManualStatus("Vyplň prosím datum a čas Od/Do.", true);
+    return;
+  }
+
+  if (endTs <= startTs) {
+    setManualStatus("Čas Do musí být později než čas Od.", true);
+    return;
+  }
+
+  const durationMs = endTs - startTs;
+  state.entries.push({
+    activity: manualActivityInput.value,
+    startTs,
+    endTs,
+    durationMs,
+    dayKey: dayKey(startTs),
+  });
+
+  save();
+  render();
+  setManualStatus("Záznam byl přidán.");
 }
 
 function formatHoursFromMs(ms) {
@@ -748,6 +835,54 @@ function renderTodayLabel() {
   });
 }
 
+function initCollapsiblePanels() {
+  const panels = Array.from(document.querySelectorAll(".panel"));
+
+  for (const panel of panels) {
+    if (panel.classList.contains("is-collapsible-ready")) {
+      continue;
+    }
+
+    const heading = panel.querySelector(":scope > h2");
+    if (!heading) {
+      continue;
+    }
+
+    const title = heading.textContent?.trim() || "Sekce";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "panel-toggle";
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.innerHTML = `<span class="panel-toggle-title">${title}</span><span class="panel-toggle-arrow" aria-hidden="true">&#9660;</span>`;
+
+    const body = document.createElement("div");
+    body.className = "panel-body";
+
+    const inner = document.createElement("div");
+    inner.className = "panel-body-inner";
+
+    let node = heading.nextSibling;
+    while (node) {
+      const next = node.nextSibling;
+      inner.appendChild(node);
+      node = next;
+    }
+
+    body.appendChild(inner);
+    heading.remove();
+
+    panel.prepend(body);
+    panel.prepend(toggle);
+    panel.classList.add("panel-collapsible", "is-open", "is-collapsible-ready");
+
+    toggle.addEventListener("click", () => {
+      const isOpen = panel.classList.contains("is-open");
+      panel.classList.toggle("is-open", !isOpen);
+      toggle.setAttribute("aria-expanded", String(!isOpen));
+    });
+  }
+}
+
 function render() {
   renderTodayLabel();
   renderButtons();
@@ -782,6 +917,12 @@ if (exportWeeklyBtn) {
   });
 }
 
+if (manualAddBtn) {
+  manualAddBtn.addEventListener("click", () => {
+    addManualEntry();
+  });
+}
+
 function scheduleMidnightCheck() {
   const now = new Date();
   const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
@@ -799,7 +940,9 @@ function scheduleMidnightCheck() {
 }
 
 loadTheme();
+initCollapsiblePanels();
 load();
+setManualDefaults();
 trackedDayKey = dayKey(Date.now());
 if (appVersion) {
   appVersion.textContent = APP_VERSION;
