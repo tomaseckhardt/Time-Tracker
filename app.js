@@ -30,8 +30,12 @@ function applyTheme(themeName) {
 }
 
 function loadTheme() {
-  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  const validThemes = ["sunrise", "slate", "citrus"];
+  const savedThemeRaw = localStorage.getItem(THEME_STORAGE_KEY);
+  const savedTheme = savedThemeRaw === "r2b2" || savedThemeRaw === "caroda"
+    ? "r2b2-caroda"
+    : savedThemeRaw;
+
+  const validThemes = ["sunrise", "slate", "citrus", "r2b2-caroda"];
   if (savedTheme && validThemes.includes(savedTheme)) {
     applyTheme(savedTheme);
     return;

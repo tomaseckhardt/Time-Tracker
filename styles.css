@@ -102,6 +102,32 @@ body[data-theme="citrus"] {
   --table-hover: rgba(63, 143, 58, 0.1);
 }
 
+body[data-theme="r2b2-caroda"] {
+  --bg: #e7eaee;
+  --panel: rgba(255, 255, 255, 0.82);
+  --ink: #1e3038;
+  --muted: #58656d;
+  --primary: #1f9bd1;
+  --secondary: #2f3137;
+  --accent: #f79a2f;
+  --danger: #b53b37;
+  --line: rgba(35, 46, 56, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.58);
+  --bg-radial-a: #ffd2a0;
+  --bg-radial-b: #a9c1ce;
+  --bg-gradient-start: #f2f4f6;
+  --bg-gradient-mid: #e8ebef;
+  --bg-gradient-end: #dfe4ea;
+  --header-a: #0f4252;
+  --header-b: #2f3137;
+  --header-c: #f79a2f;
+  --orb-a: #ffc27d;
+  --orb-b: #8fb2c2;
+  --btn-passive-bg: rgba(47, 49, 55, 0.1);
+  --btn-passive-ink: #1f3943;
+  --table-hover: rgba(31, 155, 209, 0.1);
+}
+
 * {
   box-sizing: border-box;
 }
