@@ -233,7 +233,10 @@ function addManualEntry() {
 }
 
 function formatHoursFromMs(ms) {
-  return (ms / 3600000).toFixed(2);
+  const totalMinutes = Math.max(0, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}:${String(minutes).padStart(2, "0")}`;
 }
 
 function getStartOfWeek(date) {
@@ -327,10 +330,10 @@ function buildWeeklySummaryRows() {
 function buildWeeklyCsv(rows) {
   const header = [
     "Týden",
-    "Caroda (h)",
-    "AYM (h)",
-    "Automatizované testy (h)",
-    "Celkově (h)",
+    "Caroda",
+    "AYM",
+    "Automatizované testy",
+    "Celkově",
   ];
 
   const lines = [header.join(";")];
@@ -452,6 +455,11 @@ function openWeeklyReportPage(rows) {
       background: #f8fafc;
     }
 
+    th:nth-child(n + 2),
+    td:nth-child(n + 2) {
+      text-align: center;
+    }
+
     @media print {
       body {
         background: #ffffff;
@@ -483,10 +491,10 @@ function openWeeklyReportPage(rows) {
       <thead>
         <tr>
           <th>Týden</th>
-          <th>Caroda (h)</th>
-          <th>AYM (h)</th>
-          <th>Automatizované testy (h)</th>
-          <th>Celkově (h)</th>
+          <th>Caroda</th>
+          <th>AYM</th>
+          <th>Automatizované testy</th>
+          <th>Celkově</th>
         </tr>
       </thead>
       <tbody>
