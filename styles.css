@@ -612,6 +612,11 @@ th {
   background: rgba(255, 255, 255, 0.78);
 }
 
+th:last-child,
+td:last-child {
+  text-align: center;
+}
+
 .empty {
   color: var(--muted);
 }
@@ -627,7 +632,8 @@ tbody tr:hover {
 .entry-actions {
   display: flex;
   gap: 6px;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
 }
 
 .entry-action-btn {
@@ -794,7 +800,7 @@ tbody tr:hover {
   }
 
   .entry-actions {
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .app-footer {
