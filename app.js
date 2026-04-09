@@ -151,6 +151,14 @@ function formatClock(ts) {
   });
 }
 
+function formatDate(ts) {
+  return new Date(ts).toLocaleDateString("cs-CZ", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
 function formatDateInputValue(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -271,6 +279,14 @@ function formatDateCz(date) {
   return `${d.getDate()}. ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+function formatDayLabelCz(date) {
+  return new Date(date).toLocaleDateString("cs-CZ", {
+    weekday: "short",
+    day: "numeric",
+    month: "numeric",
+  });
+}
+
 function getWeekKey(ts) {
   const start = getStartOfWeek(new Date(ts));
   const end = new Date(start);
@@ -307,24 +323,49 @@ function buildWeeklySummaryRows() {
     const weekLabel = `${formatDateCz(weekStart)} - ${formatDateCz(weekEnd)}`;
 
     if (!byWeek.has(weekKey)) {
+      const days = [];
+      const dayIndex = new Map();
+
+      for (let offset = 0; offset < 7; offset += 1) {
+        const dayDate = new Date(weekStart);
+        dayDate.setDate(dayDate.getDate() + offset);
+        const dayStorageKey = dayKey(dayDate.getTime());
+
+        dayIndex.set(dayStorageKey, days.length);
+        days.push({
+          day: formatDayLabelCz(dayDate),
+          Caroda: 0,
+          AYM: 0,
+          "Automatizované testy": 0,
+        });
+      }
+
       byWeek.set(weekKey, {
         week: weekLabel,
         weekStartTs: weekStart.getTime(),
         Caroda: 0,
         AYM: 0,
         "Automatizované testy": 0,
+        days,
+        dayIndex,
       });
     }
 
     const weekData = byWeek.get(weekKey);
     if (activityNames.includes(entry.activity)) {
       weekData[entry.activity] += entry.durationMs;
+
+      const entryDayKey = dayKey(entry.startTs);
+      const index = weekData.dayIndex.get(entryDayKey);
+      if (index !== undefined) {
+        weekData.days[index][entry.activity] += entry.durationMs;
+      }
     }
   }
 
   return Array.from(byWeek.values())
     .sort((a, b) => a.weekStartTs - b.weekStartTs)
-    .map(({ weekStartTs, ...rest }) => rest);
+    .map(({ weekStartTs, dayIndex, ...rest }) => rest);
 }
 
 function buildWeeklyCsv(rows) {
@@ -361,14 +402,50 @@ function openWeeklyReportPage(rows) {
   const stamp = new Date().toISOString().slice(0, 10);
   const csvContent = buildWeeklyCsv(rows);
   const tableRows = rows
-    .map((row) => {
+    .map((row, weekIndex) => {
       const totalMs = row.Caroda + row.AYM + row["Automatizované testy"];
-      return `<tr>
-        <td>${row.week}</td>
+      const dayRows = row.days
+        .map((day) => {
+          const dayTotalMs = day.Caroda + day.AYM + day["Automatizované testy"];
+          return `<tr>
+            <td>${day.day}</td>
+            <td>${formatHoursFromMs(day.Caroda)}</td>
+            <td>${formatHoursFromMs(day.AYM)}</td>
+            <td>${formatHoursFromMs(day["Automatizované testy"])}</td>
+            <td><strong>${formatHoursFromMs(dayTotalMs)}</strong></td>
+          </tr>`;
+        })
+        .join("");
+
+      return `<tr class="week-row">
+        <td>
+          <button class="week-toggle" data-week-index="${weekIndex}" aria-expanded="false" type="button">
+            <span class="week-toggle-arrow" aria-hidden="true">&#9654;</span>
+            <span>${row.week}</span>
+          </button>
+        </td>
         <td>${formatHoursFromMs(row.Caroda)}</td>
         <td>${formatHoursFromMs(row.AYM)}</td>
         <td>${formatHoursFromMs(row["Automatizované testy"])}</td>
         <td><strong>${formatHoursFromMs(totalMs)}</strong></td>
+      </tr>
+      <tr class="week-details is-hidden" data-week-details="${weekIndex}">
+        <td colspan="5">
+          <table class="day-table">
+            <thead>
+              <tr>
+                <th>Den</th>
+                <th>Caroda</th>
+                <th>AYM</th>
+                <th>Automatizované testy</th>
+                <th>Celkově</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dayRows}
+            </tbody>
+          </table>
+        </td>
       </tr>`;
     })
     .join("");
@@ -435,6 +512,54 @@ function openWeeklyReportPage(rows) {
     .print {
       background: #e2e8f0;
       color: #1f2a37;
+    }
+
+    .week-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: transparent;
+      color: #1f2a37;
+      border-radius: 7px;
+      padding: 5px 6px;
+      font-weight: 700;
+      margin: -5px -6px;
+      text-align: left;
+    }
+
+    .week-toggle:hover {
+      background: #eef2f9;
+    }
+
+    .week-toggle-arrow {
+      display: inline-block;
+      transition: transform 0.2s ease;
+      color: #0f766e;
+      font-size: 0.72rem;
+    }
+
+    .week-toggle[aria-expanded="true"] .week-toggle-arrow {
+      transform: rotate(90deg);
+    }
+
+    .week-details.is-hidden {
+      display: none;
+    }
+
+    .week-details > td {
+      background: #f8fafc;
+      padding: 8px 10px 12px;
+    }
+
+    .day-table th,
+    .day-table td {
+      padding: 8px 7px;
+      border-bottom: 1px solid #e7edf6;
+      font-size: 0.95rem;
+    }
+
+    .day-table tbody tr:last-child td {
+      border-bottom: 0;
     }
 
     table {
@@ -509,6 +634,21 @@ function openWeeklyReportPage(rows) {
   const downloadBtn = reportWindow.document.getElementById("downloadCsvBtn");
   const openSheetsBtn = reportWindow.document.getElementById("openSheetsBtn");
   const printBtn = reportWindow.document.getElementById("printBtn");
+  const weekToggles = Array.from(reportWindow.document.querySelectorAll(".week-toggle"));
+
+  for (const toggleBtn of weekToggles) {
+    toggleBtn.addEventListener("click", () => {
+      const weekIndex = toggleBtn.dataset.weekIndex;
+      const detailsRow = reportWindow.document.querySelector(`[data-week-details="${weekIndex}"]`);
+      if (!detailsRow) {
+        return;
+      }
+
+      const expanded = toggleBtn.getAttribute("aria-expanded") === "true";
+      toggleBtn.setAttribute("aria-expanded", String(!expanded));
+      detailsRow.classList.toggle("is-hidden", expanded);
+    });
+  }
 
   openSheetsBtn.addEventListener("click", async () => {
     try {
@@ -679,30 +819,28 @@ const ENTRIES_VISIBLE = 5;
 let entriesExpanded = false;
 
 function renderEntries() {
-  const today = dayKey(getNow());
-  const todayEntries = [];
+  const recentEntries = [];
 
   for (let i = state.entries.length - 1; i >= 0; i -= 1) {
     const entry = state.entries[i];
-    if (entry.dayKey === today) {
-      todayEntries.push({ entry, originalIndex: i });
-    }
+    recentEntries.push({ entry, originalIndex: i });
   }
 
   const toggleBtn = document.getElementById('entriesToggleBtn');
 
-  if (todayEntries.length === 0) {
-    entriesBody.innerHTML = '<tr><td colspan="5" class="empty">Zatím žádné záznamy.</td></tr>';
+  if (recentEntries.length === 0) {
+    entriesBody.innerHTML = '<tr><td colspan="6" class="empty">Zatím žádné záznamy.</td></tr>';
     toggleBtn.style.display = 'none';
     return;
   }
 
-  const visible = entriesExpanded ? todayEntries : todayEntries.slice(0, ENTRIES_VISIBLE);
+  const visible = entriesExpanded ? recentEntries : recentEntries.slice(0, ENTRIES_VISIBLE);
 
   entriesBody.innerHTML = visible
     .map(({ entry, originalIndex }) => {
       return `<tr>
         <td>${entry.activity}</td>
+        <td>${formatDate(entry.startTs)}</td>
         <td>${formatClock(entry.startTs)}</td>
         <td>${formatClock(entry.endTs)}</td>
         <td>${formatTime(entry.durationMs)}</td>
@@ -714,9 +852,9 @@ function renderEntries() {
     })
     .join("");
 
-  if (todayEntries.length > ENTRIES_VISIBLE) {
+  if (recentEntries.length > ENTRIES_VISIBLE) {
     toggleBtn.style.display = '';
-    const hidden = todayEntries.length - ENTRIES_VISIBLE;
+    const hidden = recentEntries.length - ENTRIES_VISIBLE;
     toggleBtn.textContent = entriesExpanded
       ? 'Zobrazit méně ▲'
       : `Zobrazit vše (${hidden} další) ▼`;
