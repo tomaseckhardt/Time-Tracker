@@ -19,7 +19,7 @@
 
 ### Epic 1.7.1-A: Bezpečný import + správné zeitgeisty přes hranice dne
 **Priority**: P0
-**Status**: Planned
+**Status**: Released (v1.7.1)
 
 **User Story**:
 As a uživatel trackeru,
