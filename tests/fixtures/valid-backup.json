@@ -1,0 +1,17 @@
+{
+  "active": null,
+  "entries": [
+    {
+      "id": "backup-entry-001",
+      "activity": "Caroda",
+      "startTs": 1717408800000,
+      "endTs": 1717412400000,
+      "durationMs": 3600000,
+      "dayKey": "2024-06-03",
+      "source": "tracked",
+      "createdAt": 1717408800000,
+      "updatedAt": 1717412400000,
+      "editedManually": false
+    }
+  ]
+}

@@ -33,6 +33,17 @@
 
     <section class="panel">
       <h2>Aktivita</h2>
+      <div id="recoveryBanner" class="session-recovery is-hidden" aria-live="polite">
+        <div>
+          <strong>Obnovená aktivita po načtení stránky</strong>
+          <p id="recoveryMessage">Běžící aktivita byla obnovena z předchozí relace.</p>
+        </div>
+        <div class="recovery-actions">
+          <button id="recoveryKeepBtn" class="recovery-btn keep" type="button">Pokračovat</button>
+          <button id="recoveryStopBtn" class="recovery-btn stop" type="button">Ukončit teď</button>
+          <button id="recoveryDiscardBtn" class="recovery-btn discard" type="button">Zahodit</button>
+        </div>
+      </div>
       <div class="buttons">
         <button class="activity-btn" data-activity="Caroda">Caroda</button>
         <button class="activity-btn" data-activity="AYM">AYM</button>
@@ -68,6 +79,7 @@
 
     <section class="panel">
       <h2>Ruční přidání záznamu</h2>
+      <p id="manualModeHint" class="manual-mode-hint">Můžeš doplnit chybějící blok nebo opravit historii.</p>
       <div class="manual-grid">
         <label>
           Aktivita
@@ -90,12 +102,55 @@
           <input id="manualEndInput" type="time" step="60" />
         </label>
       </div>
-      <button id="manualAddBtn" class="manual-add-btn">Přidat záznam</button>
+      <div class="manual-actions">
+        <button id="manualAddBtn" class="manual-add-btn">Přidat záznam</button>
+        <button id="manualCancelBtn" class="manual-cancel-btn is-hidden" type="button">Zrušit úpravu</button>
+      </div>
       <p id="manualStatus" class="manual-status"></p>
     </section>
 
     <section class="panel">
+      <h2>Data a záloha</h2>
+      <p class="data-tools-note">Exportuj si průběžně JSON zálohu. Import nahradí aktuální data včetně běžící aktivity.</p>
+      <div class="data-tools-actions">
+        <button id="exportBackupBtn" class="secondary-btn" type="button">Export JSON zálohy</button>
+        <button id="importBackupBtn" class="secondary-btn" type="button">Import JSON zálohy</button>
+      </div>
+      <input id="importBackupInput" type="file" accept="application/json" class="visually-hidden" />
+      <p id="dataToolsStatus" class="data-tools-status"></p>
+    </section>
+
+    <section class="panel">
       <h2>Poslední záznamy</h2>
+      <div class="entries-filters">
+        <div class="entries-scope" role="group" aria-label="Rychlé filtrování historie">
+          <button class="entries-scope-btn active" data-scope="all" type="button">Vše</button>
+          <button class="entries-scope-btn" data-scope="today" type="button">Dnes</button>
+          <button class="entries-scope-btn" data-scope="week" type="button">Tento týden</button>
+        </div>
+        <label>
+          Aktivita
+          <select id="entriesActivityFilter">
+            <option value="all">Všechny aktivity</option>
+            <option value="Caroda">Caroda</option>
+            <option value="AYM">AYM</option>
+            <option value="Automatizované testy">Automatizované testy</option>
+          </select>
+        </label>
+        <label>
+          Od data
+          <input id="entriesDateFrom" type="date" />
+        </label>
+        <label>
+          Do data
+          <input id="entriesDateTo" type="date" />
+        </label>
+        <label class="entries-unusual-toggle">
+          <input id="entriesUnusualOnly" type="checkbox" />
+          Jen neobvyklé
+        </label>
+        <button id="entriesResetFiltersBtn" class="secondary-btn" type="button">Vymazat filtry</button>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>

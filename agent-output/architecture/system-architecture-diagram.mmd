@@ -1,0 +1,19 @@
+%% Time Tracker - Architecture Diagram (Mermaid)
+%% Last Updated: 2026-04-09
+
+flowchart LR
+  U[User] -->|clicks start/stop, adds entries| UI[Browser UI\n(index.html + styles.css)]
+  UI <--> APP[App Logic\n(app.js state + render)]
+  APP <--> LS[(localStorage\ntracker-data-v1)]
+
+  APP -->|Export JSON| DL[Download\nBlob + URL]
+  DL --> FS[(User File System)]
+
+  FS -->|Import JSON| UP[File Upload\n<input type=file>]
+  UP --> APP
+
+  subgraph Testing
+    PW[Playwright E2E] -->|HTTP| Srv[Static Web Server\nPython http.server or Playwright webServer]
+  end
+
+  Srv --> UI
