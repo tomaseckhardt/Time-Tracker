@@ -247,6 +247,11 @@ function formatHoursFromMs(ms) {
   return `${hours}:${String(minutes).padStart(2, "0")}`;
 }
 
+function formatHoursFromMsForReport(ms) {
+  const totalMinutes = Math.max(0, Math.round(ms / 60000));
+  return totalMinutes === 0 ? "-" : formatHoursFromMs(ms);
+}
+
 function getStartOfWeek(date) {
   const d = new Date(date);
   const day = d.getDay();
@@ -409,10 +414,10 @@ function openWeeklyReportPage(rows) {
           const dayTotalMs = day.Caroda + day.AYM + day["Automatizované testy"];
           return `<tr>
             <td>${day.day}</td>
-            <td>${formatHoursFromMs(day.Caroda)}</td>
-            <td>${formatHoursFromMs(day.AYM)}</td>
-            <td>${formatHoursFromMs(day["Automatizované testy"])}</td>
-            <td><strong>${formatHoursFromMs(dayTotalMs)}</strong></td>
+            <td>${formatHoursFromMsForReport(day.Caroda)}</td>
+            <td>${formatHoursFromMsForReport(day.AYM)}</td>
+            <td>${formatHoursFromMsForReport(day["Automatizované testy"])}</td>
+            <td><strong>${formatHoursFromMsForReport(dayTotalMs)}</strong></td>
           </tr>`;
         })
         .join("");
@@ -424,10 +429,10 @@ function openWeeklyReportPage(rows) {
             <span>${row.week}</span>
           </button>
         </td>
-        <td>${formatHoursFromMs(row.Caroda)}</td>
-        <td>${formatHoursFromMs(row.AYM)}</td>
-        <td>${formatHoursFromMs(row["Automatizované testy"])}</td>
-        <td><strong>${formatHoursFromMs(totalMs)}</strong></td>
+        <td>${formatHoursFromMsForReport(row.Caroda)}</td>
+        <td>${formatHoursFromMsForReport(row.AYM)}</td>
+        <td>${formatHoursFromMsForReport(row["Automatizované testy"])}</td>
+        <td><strong>${formatHoursFromMsForReport(totalMs)}</strong></td>
       </tr>
       <tr class="week-details is-hidden" data-week-details="${weekIndex}">
         <td colspan="5">
